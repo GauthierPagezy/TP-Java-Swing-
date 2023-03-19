@@ -1,27 +1,48 @@
 package com.bddgraph.model.contactEtudiant;
 
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Stack;
+
 
 public class EtudiantRepository {
     private String nom;
     private String prenom;
-    private Date  dateNaissance;
+    private Date dateNaissance;
     private String lieuNaissance;
-    private String Nationalite;
+    private String nationalite;
     private String rue;
     private String ville;
     private String mail;
     private String telephone;
-
-    private String loisirs = "";
-
+    private String loisirs;
     private String sexe;
     private String niveau;
+
+    // Ici bac et filiere devraient être des int (idFil, idBac) faisant référence aux Modeles Filieres et Bacs
     private String bac;
     private String filiere;
-    private String cp;
+    private int cp;
+
+    public EtudiantRepository(String nom, String prenom, Date dateNaissance, String lieuNaissance, String nationalite, String rue, String ville, String mail, String telephone, String loisirs, String sexe, String niveau, String bac, String filiere, int cp) {
+        this.nom = nom;
+        this.prenom = prenom;
+        this.dateNaissance = dateNaissance;
+        this.lieuNaissance = lieuNaissance;
+        this.nationalite = nationalite;
+        this.rue = rue;
+        this.ville = ville;
+        this.mail = mail;
+        this.telephone = telephone;
+        this.loisirs = loisirs;
+        this.sexe = sexe;
+        this.niveau = niveau;
+        this.bac = bac;
+        this.filiere = filiere;
+        this.cp = cp;
+    }
+
+    public EtudiantRepository(){}
 
     public void setMail(String mail) {
         this.mail = mail;
@@ -53,7 +74,7 @@ public class EtudiantRepository {
     }
 
     public void setNationalite(String nationalite) {
-        Nationalite = nationalite;
+        this.nationalite = nationalite;
     }
 
     public void setRue(String rue) {
@@ -80,8 +101,8 @@ public class EtudiantRepository {
         this.bac = bac;
     }
 
-    public void setCp(String cp) {
-        this.cp = String.valueOf(cp);
+    public void setCp(int cp) {
+        this.cp = cp;
     }
 
     public String getNom() {
@@ -101,7 +122,7 @@ public class EtudiantRepository {
     }
 
     public String getNationalite() {
-        return Nationalite;
+        return nationalite;
     }
 
     public String getRue() {
@@ -140,7 +161,7 @@ public class EtudiantRepository {
         return filiere;
     }
 
-    public String getCp() {
+    public int getCp() {
         return cp;
     }
 
@@ -151,7 +172,7 @@ public class EtudiantRepository {
                 ", prenom='" + prenom + '\'' +
                 ", dateNaissance='" + dateNaissance + '\'' +
                 ", lieuNaissance='" + lieuNaissance + '\'' +
-                ", Nationalite='" + Nationalite + '\'' +
+                ", Nationalite='" + nationalite + '\'' +
                 ", rue='" + rue + '\'' +
                 ", ville='" + ville + '\'' +
                 ", mail='" + mail + '\'' +
@@ -165,65 +186,53 @@ public class EtudiantRepository {
                 '}';
     }
 
-    public int InsertEtudiant(Connection connection) throws SQLException {
+    public int insertEtudiant(Connection connection) throws SQLException {
         PreparedStatement preparedStatement = null;
         int resultSet;
-        String nom = this.nom;
-        String prenom = this.prenom;
-        String dateNaissance = this.dateNaissance.toString();
-        String lieuNaissance = this.lieuNaissance;
-        String nationalite = this.Nationalite;
-        String rue = this.rue;
-        String cp = this.cp;
-        String ville = this.ville;
-        String telephone = this.telephone;
-        String mail = this.mail;
-        String sexe = this.sexe;
-        String loisir = this.loisirs;
-        String bac = this.bac;
-        String filere = this.filiere;
-        String niveau = this.niveau;
+
         try {
-            String sql = "INSERT INTO etudiant (idBac, idFil,  nom, prenom, dateNaiss, LieuNaiss, sexe, nationalite, rue, cp,  ville, telephone, mail, niveau,  loisir) VALUES ((SELECT idBac FROM bac WHERE libelle = ?), (SELECT idFil FROM filiere WHERE nom = ?), ?, ?,?,?,?,?,?,?,?,?,?,?,?)";
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            String sql = "INSERT INTO etudiant (idBac, idFil,  nom, prenom, dateNaiss, LieuNaiss, sexe, nationalite, rue, cp,  ville, telephone, mail, niveau) VALUES ((SELECT idBac FROM bac WHERE libelle = ?), (SELECT idFil FROM filiere WHERE nom = ?), ?, ?,?,?,?,?,?,?,?,?,?,?)";
             preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setString(1, bac);
-            preparedStatement.setString(2,filere);
+            preparedStatement.setString(2, filiere);
             preparedStatement.setString(3, nom);
             preparedStatement.setString(4, prenom);
-            preparedStatement.setString(5, dateNaissance);
+            preparedStatement.setString(5, simpleDateFormat.format(dateNaissance));
             preparedStatement.setString(6, lieuNaissance);
             preparedStatement.setString(7, sexe);
             preparedStatement.setString(8, nationalite);
             preparedStatement.setString(9, rue);
-            preparedStatement.setInt(10, Integer.parseInt(cp));
+            preparedStatement.setInt(10, cp);
             preparedStatement.setString(11, ville);
             preparedStatement.setString(12, telephone);
             preparedStatement.setString(13, mail);
             preparedStatement.setString(14, niveau);
-
-            if (loisirs.isEmpty() && loisirs != null) {
-                preparedStatement.setNull(15, Types.VARCHAR); // définir la valeur du paramètre à null
-            } else {
-                preparedStatement.setString(15, loisirs); // définir la valeur du paramètre à la chaîne de caractères
-            }
             resultSet = preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            // fermer les ressources
-            try {
-                if (preparedStatement != null) {
-                    preparedStatement.close();
-                }
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
         }
         return resultSet;
     }
-
-
+    public ResultSet checkEtudiantInDataBase(Connection connection) {
+        java.sql.PreparedStatement pstmt;
+        ResultSet resultSet = null;
+        try {
+            System.out.println(nom);
+            String request = "SELECT count(*) FROM etudiant WHERE (nom = ? AND prenom = ? AND dateNaiss = ? AND lieuNaiss = ?) OR telephone = ?";
+            pstmt = connection.prepareStatement(request);
+            pstmt.setString(1, this.nom);
+            pstmt.setString(2, this.prenom);
+            pstmt.setString(3, this.dateNaissance.toString());
+            pstmt.setString(4,this.lieuNaissance);
+            pstmt.setString(5, this.telephone);
+            resultSet = pstmt.executeQuery();
+            System.out.println(resultSet);
+        } catch (SQLException e) {
+            System.out.println("Erreur lors du chargement " + e.getMessage());
+        }
+        return resultSet;
+    }
 }
+
+

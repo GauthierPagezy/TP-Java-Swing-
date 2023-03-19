@@ -5,11 +5,11 @@ import com.bddgraph.model.contactEtudiant.BacsRepository;
 import com.bddgraph.model.contactEtudiant.EtudiantRepository;
 import com.bddgraph.model.contactEtudiant.FilieresRepository;
 import com.bddgraph.view.ContactEtudiantView;
+import com.bddgraph.view.LoginView;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -26,18 +26,15 @@ import java.util.Date;
 import java.util.Map;
 
 
-public class ContactEtudiantController implements ActionListener {
+public class ContactEtudiantController {
     private ContactEtudiantView contactEtudiantView;
     Connection connection = Connexion.getConnection();
-
     private boolean isFirstClickDate = true;
     private boolean isFirstClickCp = true;
     private boolean isFirstClickTel = true;
 
-
-
-
     public ContactEtudiantController() throws ParseException, SQLException {
+        // Appel de la vue pour afficher la fenêtre
         contactEtudiantView = new ContactEtudiantView();
         contactEtudiantView.afficherVue();
         // Récupération des filieres et bacs du modèle
@@ -45,7 +42,7 @@ public class ContactEtudiantController implements ActionListener {
         BacsRepository bacsRepository = new BacsRepository();
         ResultSet filieresResultSet;
 
-        // Transmission des filieres et bacs et à la vue
+        // Transmission des filieres et bacs et à la vue pour les comboBox
         filieresResultSet = filieresRepository.getFilieres(connection);
         ResultSet bacResultSet = bacsRepository.getBacs(connection);
         contactEtudiantView.remplirComboBoxBac(bacResultSet);
@@ -54,93 +51,80 @@ public class ContactEtudiantController implements ActionListener {
         // Méthodes contenants les Listeners des widgets de ContactEtudiantView
         setValiderBtnComportement();
         setTexfieldDateAndCpComportement();
-        //setValiderBtnAcces();
+        setValiderBtnAcces();
+        setAnnulerBtnComportement();
+        setQuitterBtnComportement();
     }
 
-    
-    // La politique des champs nécessaires est définie ici. Loisir est optionel
-    public void checkValiderBtn() {
-        boolean value;
-        if (contactEtudiantView.getTextFieldNom().getText().isBlank() ||
-                contactEtudiantView.getTextFieldPrenom().getText().trim().isEmpty() ||
-                contactEtudiantView.getFormattedTextFieldDateNaiss().getText().isBlank() ||
-                contactEtudiantView.getTextFieldNationalite().getText().isBlank() ||
-                contactEtudiantView.getBoutonsRadio().getSelection() == null ||
-                contactEtudiantView.getTextFieldRue().getText().isBlank() ||
-                contactEtudiantView.getTextFieldCP().getText().isBlank() ||
-                contactEtudiantView.getTextFieldVille().getText().isBlank() ||
-                contactEtudiantView.getTextFieldTelephone().getText().isBlank() ||
-                contactEtudiantView.getTextFieldMail().getText().isBlank()) {
-            value = false;
-        } else {
-            value = true;
-        }
-        contactEtudiantView.getValiderButton().setEnabled(value);
-    }
-
-    //Ecoute des radioButtons
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (contactEtudiantView.getHommeRadioButton().isSelected() || contactEtudiantView.getFemmeRadioButton().isSelected()) {
-            checkValiderBtn();
-        }
-    }
-
+    // Décrit le comportement du bouton valider de la page Contact Etudiant
     public void setValiderBtnComportement() {
-        contactEtudiantView.getValiderButton().addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    if (checkFormular(contactEtudiantView.getFormularDatas()) && isFormularRecordable(contactEtudiantView.getFormularDatas())) {
-                        System.out.println("Etudiant pret à etre créé");
-                        EtudiantRepository etudiant = createEtudiant();
-                        etudiant.toString();
-                        System.out.println("Le bouton sélectionné est : " + contactEtudiantView.getBoutonsRadio().getSelection().getActionCommand());
+        contactEtudiantView.getValiderButton().addActionListener(e -> {
+            System.out.println("Appui");
+            try {
+                if (isFormularRecordable(contactEtudiantView.getFormularDatas())) {
+                    EtudiantRepository etudiant = createEtudiant();
+                    System.out.println(etudiant.toString() + "\n\n");
+                    if (!existsInDataBase(etudiant)) {
+                        // On enregistre l'étudiant et l'affiche
+                        etudiant.insertEtudiant(connection);
+                        contactEtudiantView.afficherEtudiant(etudiant);
                     }
-                } catch (ParseException ex) {
-                    throw new RuntimeException(ex);
                 }
+            } catch (ParseException | SQLException ex) {
+                throw new RuntimeException(ex);
             }
         });
     }
 
-    // Vérifie si le formulaire est
+    // La politique des champs nécessaires est définie ici. Loisir est optionel
+    public void checkValiderBtn() {
+        boolean value;
+        value = !contactEtudiantView.getTextFieldNom().getText().isBlank() &&
+                !contactEtudiantView.getTextFieldPrenom().getText().trim().isEmpty() &&
+                !contactEtudiantView.getFormattedTextFieldDateNaiss().getText().isBlank() &&
+                !contactEtudiantView.getTextFieldNationalite().getText().isBlank() &&
+                contactEtudiantView.getBoutonsRadio().getSelection() != null &&
+                !contactEtudiantView.getTextFieldRue().getText().isBlank() &&
+                !contactEtudiantView.getFormattedTextFieldCp().getText().isBlank() &&
+                !contactEtudiantView.getTextFieldVille().getText().isBlank() &&
+                !contactEtudiantView.getTextFieldTelephone().getText().isBlank() &&
+                !contactEtudiantView.getTextFieldMail().getText().isBlank();
+        contactEtudiantView.getValiderButton().setEnabled(value);
+    }
+
+    // Vérifie si le formulaire est envoyable à la base
     public boolean isFormularRecordable(Map<String, String> formulaire) throws ParseException {
-        if (formulaire == null || !checkFormular(formulaire) || !checkDateNaissance(formulaire)) {
-            return false;
+        if (formulaire != null) {
+            return checkFormular(formulaire) && checkDateNaissance(formulaire);
         }
         return true;
     }
 
-
     // Vérifie si le formulaire ne contient pas de chiffres dans les champs.
     private boolean checkFormular(Map<String, String> formulaire) {
-        boolean isOk = false;
-        if (formulaire == null) {
-            JOptionPane.showMessageDialog(null, "Erreur avec le formulaire");
-            return isOk;
-        }
-        ArrayList<String> champsEnErreur = new ArrayList<>();
-        int index = 0;
-        // On verifie
-        for (String champ : contactEtudiantView.getChamps()) {
-            if (containADigit(formulaire.get(champ))) {
-                champsEnErreur.add(champ);
+        if (!(formulaire.get("cp").length() == 5) || !(formulaire.get("telephone").trim().length() == 17)) {
+            JOptionPane.showMessageDialog(null, "Le cp ou le téléphone est invalide");
+            return false;
+        } else {
+            ArrayList<String> champsEnErreur = new ArrayList<>();
+            // On verifie
+            for (String champ : contactEtudiantView.getChamps()) {
+                if (containADigit(formulaire.get(champ))) {
+                    champsEnErreur.add(champ);
+                }
+            }
+            // Appel de la vue pour afficher les erreurs
+            if (champsEnErreur.size() > 0) {
+                contactEtudiantView.afficherErreurChiffre(champsEnErreur);
+                return false;
+            } else {
+                return true;
             }
         }
-        // Appel de la vue pour afficher les erreurs
-        if (champsEnErreur.size() > 0) {
-            contactEtudiantView.afficherErreurChiffre(champsEnErreur);
-        } else {
-            isOk = true;
-
-        }
-        return isOk;
     }
 
     // Méthode privée pour vérifier la date de naissance
-    private boolean checkDateNaissance(Map<String, String> formulaire) throws ParseException {
-        boolean isOk = false;
+    private boolean checkDateNaissance(Map<String, String> formulaire) {
         try {
             if (formulaire != null) {
                 String sDateNaiss = formulaire.get("dateNaiss");
@@ -149,7 +133,6 @@ public class ContactEtudiantController implements ActionListener {
                 LocalDate localDateActuelle = LocalDate.now();
                 LocalDate localAgeMax = localDateActuelle.minusYears(80); // 2023 - 80 = 1943 minimum
                 LocalDate localAgeMin = localDateActuelle.minusYears(10); // 2023 - 10 = 2013 minimum
-                Date dateActuelle = convertLocalDateToDate(localDateActuelle);
                 Date dateMin = convertLocalDateToDate(localAgeMin);
                 Date dateMax = convertLocalDateToDate(localAgeMax);
                 if (dateNaiss.after(dateMin) || dateNaiss.before(dateMax)) {
@@ -160,12 +143,13 @@ public class ContactEtudiantController implements ActionListener {
                 }
             }
         } catch (ParseException e) {
-            JOptionPane.showMessageDialog(null, "Attention, la date ne semble pas valide");
+            JOptionPane.showMessageDialog(null, "Attention, le format de la date ne semble pas valide");
             return false;
         }
         return false;
     }
 
+    // Méthode qui créé un objet Etudiant
     public EtudiantRepository createEtudiant() throws ParseException {
         Map<String, String> formularDatas = contactEtudiantView.getFormularDatas();
         EtudiantRepository etudiant = new EtudiantRepository();
@@ -174,7 +158,7 @@ public class ContactEtudiantController implements ActionListener {
         etudiant.setLieuNaissance(formularDatas.get("lieuNaiss"));
         etudiant.setNationalite(formularDatas.get("nationalite"));
         etudiant.setRue(formularDatas.get("rue"));
-        etudiant.setCp(formularDatas.get("cp"));
+        etudiant.setCp(Integer.parseInt(formularDatas.get("cp")));
         etudiant.setVille(formularDatas.get("ville"));
         etudiant.setTelephone(formularDatas.get("telephone"));
         etudiant.setMail(formularDatas.get("mail"));
@@ -184,21 +168,22 @@ public class ContactEtudiantController implements ActionListener {
         Date dateNaiss = formatter.parse(sDateNaiss);
         etudiant.setDateNaissance(dateNaiss);
 
-        ButtonModel selection = contactEtudiantView.getBoutonsRadio().getSelection();
-        if (selection != null) {
-            etudiant.setSexe(selection.getActionCommand());
-        }
+        if (contactEtudiantView.getHommeRadioButton().isSelected()) {
+            etudiant.setSexe(contactEtudiantView.getHommeRadioButton().getText());
+        } else etudiant.setSexe(contactEtudiantView.getFemmeRadioButton().getText());
 
         if (contactEtudiantView.getSportsCheckBox().isSelected()) {
             etudiant.setLoisirs(contactEtudiantView.getSportsCheckBox().getText());
-        } if (contactEtudiantView.getVoyagesCheckBox().isSelected()) {
+        }
+        if (contactEtudiantView.getVoyagesCheckBox().isSelected()) {
             etudiant.setLoisirs(contactEtudiantView.getVoyagesCheckBox().getText());
-        } if (contactEtudiantView.getMusiquesCheckBox().isSelected()) {
+        }
+        if (contactEtudiantView.getMusiquesCheckBox().isSelected()) {
             etudiant.setLoisirs(contactEtudiantView.getMusiquesCheckBox().getText());
-        } if (contactEtudiantView.getLectureCheckBox().isSelected()) {
+        }
+        if (contactEtudiantView.getLectureCheckBox().isSelected()) {
             etudiant.setLoisirs(contactEtudiantView.getLectureCheckBox().getText());
         }
-
         etudiant.setFiliere((String) contactEtudiantView.getComboBoxFiliere().getSelectedItem());
         etudiant.setBac((String) contactEtudiantView.getComboBoxBac().getSelectedItem());
         etudiant.setNiveau(String.valueOf(contactEtudiantView.getComboBoxNiveau().getSelectedItem()));
@@ -208,8 +193,7 @@ public class ContactEtudiantController implements ActionListener {
     // Méthode privée pour convertir un objet LocalDate en Date
     private Date convertLocalDateToDate(LocalDate localDate) {
         ZoneId defaultZoneId = ZoneId.systemDefault();
-        Date date = Date.from(localDate.atStartOfDay(defaultZoneId).toInstant());
-        return date;
+        return Date.from(localDate.atStartOfDay(defaultZoneId).toInstant());
     }
 
     // Méthode privée pour tester si une chaine de charactères contient un chiffre
@@ -222,10 +206,30 @@ public class ContactEtudiantController implements ActionListener {
         return false;
     }
 
+    // Méthode qui appelle le modèle et vérifie que l'utilisateur n'existe pas déja dans la base
+    private boolean existsInDataBase(EtudiantRepository etudiantRepository) {
+        boolean exist = false;
+        ResultSet resultSet = etudiantRepository.checkEtudiantInDataBase(connection);
+        try {
+            if (resultSet.next()) {
+                if (resultSet.getInt(1) == 1) {
+                    JOptionPane.showMessageDialog(null, "L'étudiant existe déja dans la base, vérifier le nom prénom date de naisse ou numéro de téléphone");
+                    exist = true;
+                }
+            } else {
+                JOptionPane.showMessageDialog(null, "Vérifier la connexion Internet");
+            }
+        } catch (SQLException | NullPointerException e) {
+            throw new RuntimeException(e);
+        }
+        return exist;
+    }
+
     // Pour vérifier si l'on peut activer le bouton après modification d'un des champs
     public void setValiderBtnAcces() {
         // Blocage du bouton Comfirmer si les champs ne sont pas remplis
-        contactEtudiantView.getHommeRadioButton().addActionListener(this);
+        contactEtudiantView.getHommeRadioButton().addActionListener(e -> checkValiderBtn());
+        contactEtudiantView.getFemmeRadioButton().addActionListener(e -> checkValiderBtn());
         contactEtudiantView.getTextFieldNom().getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
@@ -259,7 +263,6 @@ public class ContactEtudiantController implements ActionListener {
                 checkValiderBtn();
             }
         });
-
         contactEtudiantView.getFormattedTextFieldDateNaiss().getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
@@ -293,7 +296,6 @@ public class ContactEtudiantController implements ActionListener {
                 checkValiderBtn();
             }
         });
-
         contactEtudiantView.getTextFieldRue().getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
@@ -310,8 +312,7 @@ public class ContactEtudiantController implements ActionListener {
                 checkValiderBtn();
             }
         });
-
-        contactEtudiantView.getTextFieldCP().getDocument().addDocumentListener(new DocumentListener() {
+        contactEtudiantView.getFormattedTextFieldCp().getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
                 checkValiderBtn();
@@ -381,6 +382,31 @@ public class ContactEtudiantController implements ActionListener {
         contactEtudiantView.getValiderButton().setEnabled(false);
     }
 
+    public void setAnnulerBtnComportement(){
+        contactEtudiantView.getAnnulerButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                contactEtudiantView.reinitialiserFormulaire();
+                isFirstClickCp = true;
+                isFirstClickDate = true;
+                isFirstClickTel  = true;
+            }
+        });
+    }
+
+    public void setQuitterBtnComportement(){
+        contactEtudiantView.getQuitterButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int dialogResult = JOptionPane.showConfirmDialog(null, "Etes-vous sûr de vouloir quitter ?", "Warning", JOptionPane.YES_NO_OPTION);
+                if (dialogResult == JOptionPane.YES_OPTION) {
+                    contactEtudiantView.dispose();
+                   LoginController loginController = new LoginController();
+                   loginController.lancerApplication();
+                }
+            }
+        });
+    }
 
     /* On veut que le curseur soit placé à gauche au premier clique
        car pb avec le MaskFormatter qui nous permet de cliquer n'importe où

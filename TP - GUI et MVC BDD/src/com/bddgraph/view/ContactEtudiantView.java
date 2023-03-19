@@ -4,7 +4,6 @@ import com.bddgraph.model.contactEtudiant.EtudiantRepository;
 
 import javax.swing.*;
 import javax.swing.text.MaskFormatter;
-import java.awt.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -16,10 +15,8 @@ public class ContactEtudiantView extends JFrame {
     private JPanel panelTextfields;
     private JPanel panelRueCpVille;
     private JPanel panelDroit;
-    private JPanel panelTitle;
     private JPanel panelButtons;
     private JPanel panelFiliere;
-
     private JTextField textFieldMail;
     private JTextField textFieldRue;
     private JTextField textFieldVille;
@@ -30,27 +27,25 @@ public class ContactEtudiantView extends JFrame {
     private JFormattedTextField formattedTextFieldTel;
     private JFormattedTextField formattedTextFieldDateNaiss;
     private JFormattedTextField formattedTextFieldCP;
-
     private JCheckBox sportsCheckBox;
     private JCheckBox lectureCheckBox;
     private JCheckBox voyagesCheckBox;
     private JCheckBox musiquesCheckBox;
-
     private JComboBox<String> comboBoxFiliere;
-    private JComboBox<String>  comboBoxNiveau;
-    private JComboBox<String>  comboBoxBac;
+    private JComboBox<String> comboBoxNiveau;
+    private JComboBox<String> comboBoxBac;
     private JButton annulerButton;
     private JButton quitterButton;
     private JButton validerButton;
     private JRadioButton hommeRadioButton;
     private JRadioButton femmeRadioButton;
-    ButtonGroup boutonsRadio = new ButtonGroup();;
-
+    private JTextPane textPaneResume;
+    private JLabel labelEtudiant;
+    ButtonGroup boutonsRadio = new ButtonGroup();
     private String[] champs;
-    private String[] libelles;
 
-    public void afficherVue() throws ParseException {
-        setTitle("Connexion");
+    public void afficherVue() {
+        setTitle("Contact Etudiant");
         setSize(1350, 780);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         this.setVisible(true);
@@ -64,8 +59,7 @@ public class ContactEtudiantView extends JFrame {
         boutonsRadio.clearSelection();
 
         // Assignations des champs pour gérer leur erreurs
-        champs = new String[]{ "nom", "prenom", "lieuNaiss", "nationalite", "ville"};
-        libelles = new String[]{"Nom", "Prenom", "LieuNaiss", "Nationalite", "Ville"};
+        champs = new String[]{"nom", "prenom", "lieuNaiss", "nationalite", "ville"};
 
         try {
             String validCharacters = "0123456789";
@@ -86,6 +80,59 @@ public class ContactEtudiantView extends JFrame {
     }
 
 
+    public Map<String, String> getFormularDatas() {
+        Map<String, String> formular = new HashMap<>();
+        formular.put("nom", textFieldNom.getText().trim());
+        formular.put("prenom", textFieldPrenom.getText().trim());
+        formular.put("dateNaiss", formattedTextFieldDateNaiss.getText().trim());
+        formular.put("lieuNaiss", textFieldLieuNaissance.getText().trim());
+        formular.put("nationalite", textFieldNationalite.getText().trim());
+        formular.put("rue", textFieldRue.getText().trim());
+        formular.put("cp", formattedTextFieldCP.getText().trim());
+        formular.put("ville", textFieldVille.getText().trim());
+        formular.put("telephone", formattedTextFieldTel.getText());
+        formular.put("mail", textFieldMail.getText().trim());
+        return formular;
+    }
+
+    public void remplirComboBoxBac(ResultSet resultSet) throws SQLException {
+        while (resultSet.next()) {
+            this.comboBoxBac.addItem(resultSet.getString("libelle"));
+        }
+    }
+
+    public void remplirComboBoxFileres(ResultSet resultSet) throws SQLException {
+        while (resultSet.next()) {
+            this.comboBoxFiliere.addItem(resultSet.getString("nom"));
+        }
+    }
+    public void reinitialiserFormulaire(){
+        textFieldNom.setText(null);
+        textFieldPrenom.setText(null);
+        formattedTextFieldDateNaiss.setText(null);
+        textFieldLieuNaissance.setText(null);
+        textFieldNationalite.setText(null);
+        textFieldVille.setText(null);
+        formattedTextFieldCP.setText(null);
+        formattedTextFieldTel.setText(null);
+        textFieldMail.setText(null);
+        textFieldRue.setText(null);
+        comboBoxFiliere.setSelectedIndex(0);
+        comboBoxBac.setSelectedIndex(0);
+        comboBoxNiveau.setSelectedIndex(0);
+        boutonsRadio.clearSelection();
+        lectureCheckBox.setSelected(false);
+        musiquesCheckBox.setSelected(false);
+        sportsCheckBox.setSelected(false);
+        voyagesCheckBox.setSelected(false);
+
+    }
+    public void afficherErreurChiffre(ArrayList<String> champsEnErreur) {
+        JOptionPane.showMessageDialog(null, "Les champs :" + String.join(", ", champsEnErreur + " contiennent des chiffres"));
+    }
+    public void afficherEtudiant(EtudiantRepository etudiant) {
+        textPaneResume.setText(etudiant.toString());
+    }
 
     public JTextField getTextFieldMail() {
         return textFieldMail;
@@ -107,10 +154,6 @@ public class ContactEtudiantView extends JFrame {
         return femmeRadioButton;
     }
 
-    public JTextField getTextFieldCP() {
-        return formattedTextFieldCP;
-    }
-
     public JComboBox<String> getComboBoxFiliere() {
         return comboBoxFiliere;
     }
@@ -127,12 +170,6 @@ public class ContactEtudiantView extends JFrame {
         return textFieldPrenom;
     }
 
-
-
-    public JTextField getTextFieldLieuNaissance() {
-        return textFieldLieuNaissance;
-    }
-
     public JTextField getTextFieldNationalite() {
         return textFieldNationalite;
     }
@@ -140,14 +177,25 @@ public class ContactEtudiantView extends JFrame {
     public JFormattedTextField getTextFieldTelephone() {
         return formattedTextFieldTel;
     }
-    public String[] getChamps(){return champs;}
-    public String[] getLibelles(){return libelles;}
+
+    public String[] getChamps() {
+        return champs;
+    }
+
     public JTextField getTextFieldNom() {
         return textFieldNom;
     }
 
     public JCheckBox getSportsCheckBox() {
         return sportsCheckBox;
+    }
+
+    public JFormattedTextField getFormattedTextFieldCp() {
+        return formattedTextFieldCP;
+    }
+
+    public JFormattedTextField getFormattedTextFieldTel() {
+        return formattedTextFieldTel;
     }
 
     public JCheckBox getLectureCheckBox() {
@@ -161,53 +209,20 @@ public class ContactEtudiantView extends JFrame {
     public JCheckBox getMusiquesCheckBox() {
         return musiquesCheckBox;
     }
-    public ButtonGroup getBoutonsRadio() { return boutonsRadio; }
+
+    public ButtonGroup getBoutonsRadio() {
+        return boutonsRadio;
+    }
 
     public JFormattedTextField getFormattedTextFieldDateNaiss() {
         return formattedTextFieldDateNaiss;
     }
 
-    public JButton getValiderButton(){return validerButton;}
-
-    public Map<String, String> getFormularDatas() {
-        Map<String, String> formular = new HashMap<>();
-        formular.put("nom", textFieldNom.getText().trim());
-        formular.put("prenom", textFieldPrenom.getText().trim());
-        formular.put("dateNaiss", formattedTextFieldDateNaiss.getText().trim());
-        formular.put("lieuNaiss", textFieldLieuNaissance.getText().trim());
-        formular.put("nationalite", textFieldNationalite.getText().trim());
-        formular.put("rue", textFieldRue.getText().trim());
-        formular.put("cp", formattedTextFieldCP.getText().trim());
-        formular.put("ville", textFieldVille.getText().trim());
-        formular.put("telephone", formattedTextFieldTel.getText());
-        formular.put("mail", textFieldMail.getText().trim());
-        return formular;
+    public JButton getValiderButton() {
+        return validerButton;
     }
 
-    public void remplirComboBoxBac(ResultSet resultSet) throws SQLException {
-        while (resultSet.next()){
-            this.comboBoxBac.addItem(resultSet.getString("libelle"));
-        }
-    }
+    public JButton getAnnulerButton(){return annulerButton;}
 
-    public void remplirComboBoxFileres(ResultSet resultSet) throws SQLException {
-        while (resultSet.next()){
-            this.comboBoxFiliere.addItem(resultSet.getString("nom"));
-        }
-    }
-
-    public void afficherErreurChiffre(ArrayList<String> champsEnErreur) {
-        System.out.println("Print normal : ");
-        System.out.println("Les champs suivants contiennent des chiffres : " + String.join(", ", champsEnErreur));
-            JOptionPane.showMessageDialog(null, "Les champs :"+ String.join(", ", champsEnErreur+" contiennent des chiffres"));
-        }
-
-
-    public JFormattedTextField getFormattedTextFieldCp() {
-        return formattedTextFieldCP;
-    }
-
-    public JFormattedTextField getFormattedTextFieldTel() {
-        return formattedTextFieldTel;
-    }
+    public JButton getQuitterButton() { return quitterButton;}
 }
