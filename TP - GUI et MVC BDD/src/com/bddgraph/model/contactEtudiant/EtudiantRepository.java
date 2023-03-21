@@ -192,7 +192,7 @@ public class EtudiantRepository {
 
         try {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            String sql = "INSERT INTO etudiant (idBac, idFil,  nom, prenom, dateNaiss, LieuNaiss, sexe, nationalite, rue, cp,  ville, telephone, mail, niveau,loisir) VALUES ((SELECT idBac FROM bac WHERE libelle = ?), (SELECT idFil FROM filiere WHERE nom = ?), ?, ?,?,?,?,?,?,?,?,?,?,?, ?)";
+            String sql = "INSERT INTO etudiant (idBac, idFil,  nom, prenom, dateNaiss, lieuNaiss, sexe, nationalite, rue, cp,  ville, telephone, mail, niveau,loisir) VALUES ((SELECT idBac FROM bac WHERE libelle = ?), (SELECT idFil FROM filiere WHERE nom = ?), ?, ?,?,?,?,?,?,?,?,?,?,?, ?)";
             preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setString(1, bac);
             preparedStatement.setString(2, filiere);
