@@ -40,6 +40,7 @@ public class ContactEtudiantView extends JFrame {
     private JRadioButton hommeRadioButton;
     private JRadioButton femmeRadioButton;
     private JTextPane textPaneResume;
+    private JButton resEtudiantBtn;
     private JLabel labelEtudiant;
     ButtonGroup boutonsRadio = new ButtonGroup();
     private String[] champs;
@@ -225,4 +226,5 @@ public class ContactEtudiantView extends JFrame {
     public JButton getAnnulerButton(){return annulerButton;}
 
     public JButton getQuitterButton() { return quitterButton;}
+    public JButton getResEtudiantBtn(){return resEtudiantBtn;}
 }

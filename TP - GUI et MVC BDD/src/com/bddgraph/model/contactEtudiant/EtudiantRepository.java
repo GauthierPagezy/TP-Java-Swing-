@@ -24,7 +24,7 @@ public class EtudiantRepository {
     private String filiere;
     private int cp;
 
-    public EtudiantRepository(String nom, String prenom, Date dateNaissance, String lieuNaissance, String nationalite, String rue, String ville, String mail, String telephone, String loisirs, String sexe, String niveau, String bac, String filiere, int cp) {
+    public EtudiantRepository(String nom, String prenom, Date dateNaissance, String lieuNaissance, String nationalite, String rue, String ville, String mail, String telephone,String sexe, String niveau, String bac, String filiere, int cp) {
         this.nom = nom;
         this.prenom = prenom;
         this.dateNaissance = dateNaissance;
@@ -34,10 +34,10 @@ public class EtudiantRepository {
         this.ville = ville;
         this.mail = mail;
         this.telephone = telephone;
-        this.loisirs = loisirs;
         this.sexe = sexe;
         this.niveau = niveau;
         this.bac = bac;
+        this.loisirs =  "";
         this.filiere = filiere;
         this.cp = cp;
     }
@@ -192,7 +192,7 @@ public class EtudiantRepository {
 
         try {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            String sql = "INSERT INTO etudiant (idBac, idFil,  nom, prenom, dateNaiss, LieuNaiss, sexe, nationalite, rue, cp,  ville, telephone, mail, niveau) VALUES ((SELECT idBac FROM bac WHERE libelle = ?), (SELECT idFil FROM filiere WHERE nom = ?), ?, ?,?,?,?,?,?,?,?,?,?,?)";
+            String sql = "INSERT INTO etudiant (idBac, idFil,  nom, prenom, dateNaiss, LieuNaiss, sexe, nationalite, rue, cp,  ville, telephone, mail, niveau,loisir) VALUES ((SELECT idBac FROM bac WHERE libelle = ?), (SELECT idFil FROM filiere WHERE nom = ?), ?, ?,?,?,?,?,?,?,?,?,?,?, ?)";
             preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setString(1, bac);
             preparedStatement.setString(2, filiere);
@@ -208,6 +208,7 @@ public class EtudiantRepository {
             preparedStatement.setString(12, telephone);
             preparedStatement.setString(13, mail);
             preparedStatement.setString(14, niveau);
+            preparedStatement.setString(15,loisirs);
             resultSet = preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -218,7 +219,6 @@ public class EtudiantRepository {
         java.sql.PreparedStatement pstmt;
         ResultSet resultSet = null;
         try {
-            System.out.println(nom);
             String request = "SELECT count(*) FROM etudiant WHERE (nom = ? AND prenom = ? AND dateNaiss = ? AND lieuNaiss = ?) OR telephone = ?";
             pstmt = connection.prepareStatement(request);
             pstmt.setString(1, this.nom);
@@ -232,6 +232,39 @@ public class EtudiantRepository {
             System.out.println("Erreur lors du chargement " + e.getMessage());
         }
         return resultSet;
+    }
+
+    public int countEtudiantInDataBase(Connection connection) throws SQLException {
+        Statement stmt = null;
+        ResultSet resultSet = null;
+        int nbEtud = 0;
+        try {
+            String request = "Select count(*) as nbEtud FROM etudiant";
+            stmt = (Statement) connection.createStatement();
+            resultSet = stmt.executeQuery(request);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        try{
+            while(resultSet.next()){
+                nbEtud = resultSet.getInt("nbEtud");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return nbEtud;
+    }
+
+    public ResultSet selectAllEtudiants(Connection connection){
+        Statement stmt = null;
+        ResultSet resultSet = null;
+        try {
+            String request = "Select idEtud, nom, prenom FROM etudiant";
+            stmt = (Statement) connection.createStatement();
+            return stmt.executeQuery(request);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
 

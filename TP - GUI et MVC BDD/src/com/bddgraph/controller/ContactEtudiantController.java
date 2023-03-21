@@ -6,6 +6,7 @@ import com.bddgraph.model.contactEtudiant.EtudiantRepository;
 import com.bddgraph.model.contactEtudiant.FilieresRepository;
 import com.bddgraph.view.ContactEtudiantView;
 import com.bddgraph.view.LoginView;
+import com.bddgraph.view.ResEtudiantView;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -54,6 +55,7 @@ public class ContactEtudiantController {
         setValiderBtnAcces();
         setAnnulerBtnComportement();
         setQuitterBtnComportement();
+        setResEtudiantsBtnComportement();
     }
 
     // Décrit le comportement du bouton valider de la page Contact Etudiant
@@ -404,6 +406,27 @@ public class ContactEtudiantController {
                    LoginController loginController = new LoginController();
                    loginController.lancerApplication();
                 }
+            }
+        });
+    }
+
+    // Méthode qui affiche les étudiants de la base dans un Jtable
+    public void setResEtudiantsBtnComportement(){
+        contactEtudiantView.getResEtudiantBtn().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                EtudiantRepository etudiantRepository = new EtudiantRepository();
+                ResultSet liste = etudiantRepository.selectAllEtudiants(connection);
+                try {
+                    int nbEtudiants = etudiantRepository.countEtudiantInDataBase(connection);
+                    ResEtudiantView resEtudiantView = new ResEtudiantView();
+                    resEtudiantView.afficherTable(liste,nbEtudiants);
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+
+
+
             }
         });
     }
